@@ -1,9 +1,10 @@
 <script setup lang="ts">
 
+import Kanban from "../components/Kanban.vue";
 </script>
 
 <template>
-	Home Page
+	<Kanban/>
 </template>
 
 <style scoped>
