@@ -6,7 +6,7 @@ export const routes = [
             {
                 path: '/home',
                 name: 'Home',
-                component: () => import('../pages/HomePage.vue')
+                component: () => import('../pages/Kanban.vue')
             },
         ]
     },
