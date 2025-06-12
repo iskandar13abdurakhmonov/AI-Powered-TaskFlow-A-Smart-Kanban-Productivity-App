@@ -6,6 +6,7 @@ export const testingData = [
         status: 'testing',
         dueDate: '2025-01-01',
         priority: 'low',
+        progress: 100,
         category: 'bug',
         createdAt: '2024-12-31',
         assignedTo: [

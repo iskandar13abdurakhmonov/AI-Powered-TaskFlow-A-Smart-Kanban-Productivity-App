@@ -6,6 +6,7 @@ export const inProgressData = [
         status: 'in-progress',
         dueDate: '2025-01-01',
         priority: 'low',
+        progress: 33,
         category: 'bug',
         createdAt: '2024-12-31',
         assignedTo: [

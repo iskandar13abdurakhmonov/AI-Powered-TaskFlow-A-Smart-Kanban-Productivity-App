@@ -6,6 +6,7 @@ export const todosData = [
         status: 'to-do',
         dueDate: '2025-01-01',
         priority: 'low',
+        progress: 0,
         category: 'bug',
         createdAt: '2024-12-31',
         assignedTo: [

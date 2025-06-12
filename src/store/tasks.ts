@@ -75,7 +75,7 @@ export const useTaskStore = defineStore('tasks', () => {
     const getStatusByBoardType = (type: string): string => {
         switch (type) {
             case 'todos':
-                return 'todo';
+                return 'to-do';
             case 'in-progress':
                 return 'in-progress';
             case 'testing':
@@ -83,7 +83,7 @@ export const useTaskStore = defineStore('tasks', () => {
             case 'finished':
                 return 'finished';
             default:
-                return 'todo';
+                return 'to-do';
         }
     };
 
