@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { onMounted } from "vue";
+import {computed, onMounted, ref} from "vue";
 import { VueDraggableNext } from "vue-draggable-next";
 import { useTaskStore } from "../store/tasks.ts";
+import { Bug, Attach, ChatboxOutline } from '@vicons/ionicons5'
 
 const {
 	todos,
@@ -21,6 +22,16 @@ const {
 	importData,
 	storageAvailable,
 } = useTaskStore();
+
+const percentage = ref(33) // Your dynamic percentage
+
+const progressStatus = computed(() => {
+	if (percentage.value < 20) return 'error'
+	if (percentage.value < 50) return 'warning'
+	if (percentage.value < 70) return 'info'
+	if (percentage.value < 100) return 'success'
+	return 'success'
+})
 
 function createDropdownOptions(options: Array<{ name: string, src: string }>) {
 	return options.map(option => ({
@@ -57,24 +68,97 @@ onMounted(() => {
 					>
 						<n-list-item>
 							<n-thing>
-								<n-h4>
-									{{ item.title }} {{ item.id }}
-								</n-h4>
-								<n-avatar-group :options="item.assignedTo" :size="30" :max="3">
-									<template #avatar="{ option: { name, src } }">
-										<n-tooltip>
-											<template #trigger>
-												<n-avatar :src="src" />
+								<div>
+									<div class="flex justify-between align-baseline">
+										<n-tag
+												type="info"
+												size="large"
+												:bordered="false"
+										>
+											<span class="font-bold text-base">#{{ item.id }}</span>
+										</n-tag>
+										<n-tag
+												round
+												type="warning"
+												size="large"
+												:bordered="false"
+										>
+											<span class="font-semibold">{{ item.category }}</span>
+											<template #icon>
+												<n-icon size="20" :component="Bug"/>
 											</template>
-											{{ name }}
-										</n-tooltip>
-									</template>
-									<template #rest="{ options: restOptions, rest }">
-										<n-dropdown :options="createDropdownOptions(restOptions)" placement="top">
-											<n-avatar>+{{ rest }}</n-avatar>
-										</n-dropdown>
-									</template>
-								</n-avatar-group>
+										</n-tag>
+									</div>
+									<n-h4>
+										{{ item.title }} {{ item.id }}
+									</n-h4>
+									<div>
+										<n-progress
+												type="line"
+												:percentage="percentage"
+												indicator-placement="inside"
+												processing
+												:status="progressStatus"
+										/>
+									</div>
+									<div style="margin-top: 30px" class="flex justify-between align-baseline">
+										<n-avatar-group :options="item.assignedTo" :size="35" :max="3">
+											<template #avatar="{ option: { name, src } }">
+												<n-tooltip>
+													<template #trigger>
+														<n-avatar :src="src" />
+													</template>
+													{{ name }}
+												</n-tooltip>
+											</template>
+											<template #rest="{ options: restOptions, rest }">
+												<n-dropdown :options="createDropdownOptions(restOptions)" placement="top">
+													<n-avatar>+{{ rest }}</n-avatar>
+												</n-dropdown>
+											</template>
+										</n-avatar-group>
+										<div>
+											<n-badge
+													:value="1"
+													:max="99"
+													:offset="[-6, 6]"
+											>
+												<n-button
+														quaternary
+														circle
+														size="large"
+												>
+													<template #icon>
+														<n-icon
+																size="28"
+																:component="Attach"
+																:depth="2"
+														/>
+													</template>
+												</n-button>
+											</n-badge>
+											<n-badge
+													:value="15"
+													:max="999"
+													:offset="[-6, 6]"
+											>
+												<n-button
+														quaternary
+														circle
+														size="large"
+												>
+													<template #icon>
+														<n-icon
+																size="28"
+																:depth="2"
+																:component="ChatboxOutline"
+														/>
+													</template>
+												</n-button>
+											</n-badge>
+										</div>
+									</div>
+								</div>
 							</n-thing>
 						</n-list-item>
 					</n-list>

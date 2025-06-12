@@ -3,7 +3,7 @@
 </script>
 
 <template>
-	Task Board
+	<h1 class="font-bold mt-10">Task Board</h1>
 </template>
 
 <style scoped>
