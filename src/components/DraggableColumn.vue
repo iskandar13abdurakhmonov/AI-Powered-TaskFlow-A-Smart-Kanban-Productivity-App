@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { VueDraggableNext } from "vue-draggable-next";
-import { Bug, Attach, ChatboxOutline, CalendarOutline, AlertOutline } from '@vicons/ionicons5'
+import {Bug, Attach, ChatboxOutline, CalendarOutline, AlertOutline, AddCircleOutline} from '@vicons/ionicons5'
 
 const props = defineProps({
 	title: {
@@ -21,7 +21,7 @@ const props = defineProps({
 	}
 });
 
-const emit = defineEmits(['update:items', 'change']);
+const emit = defineEmits(['update:items', 'change', 'openModal']);
 
 function handleChange(event: any) {
 	emit('update:items', event);
@@ -47,7 +47,24 @@ function getProgressStatus(progress: number) {
 
 <template>
 	<n-card class="col-3 card-custom">
-		<n-h2 class="font-black" :strong="true">{{ title }}</n-h2>
+		<NFlex justify="space-between">
+			<n-h2 class="font-black" :strong="true">{{ title }}</n-h2>
+			<NButton
+					strong
+					secondary
+					round
+					size="large"
+					type="info"
+					@click="$emit('openModal')"
+			>
+				<template #icon>
+					<NIcon size="35" style="margin-right: 20px">
+						<AddCircleOutline/>
+					</NIcon>
+				</template>
+				<p class="font-semibold">Add Task</p>
+			</NButton>
+		</NFlex>
 		<VueDraggableNext
 				:list="items"
 				:data-id="dataId"

@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { useTaskStore } from "../store/tasks.ts";
 import DraggableColumn from "../components/DraggableColumn.vue";
-import {onMounted} from "vue";
+import { AddCircleOutline } from "@vicons/ionicons5";
+import {onMounted, ref} from "vue";
+import {useMessage} from "naive-ui";
 
 const {
 	todos,
@@ -11,7 +13,23 @@ const {
 	change,
 } = useTaskStore();
 
+const message = useMessage()
+
+const showModal = ref(false)
+
+const cancelCallback = () => {
+		message.success('Cancel')
+}
+
+const submitCallback = () => {
+	message.success('Submit')
+}
+
 function handleItemsUpdate(newItems: any, status: string) {
+}
+
+const openModal = () => {
+	showModal.value = true
 }
 
 onMounted(() => {
@@ -20,6 +38,9 @@ onMounted(() => {
 </script>
 
 <template>
+	<n-flex justify="end">
+
+	</n-flex>
 	<div class="row flex justify-center">
 		<div class="w-[500px]">
 			<DraggableColumn
@@ -29,6 +50,7 @@ onMounted(() => {
 					status="todos"
 					@update:items="(val) => handleItemsUpdate(val, 'todos')"
 					@change="change"
+					@openModal="openModal"
 			/>
 		</div>
 
@@ -40,6 +62,7 @@ onMounted(() => {
 					status="in-progress"
 					@update:items="(val) => handleItemsUpdate(val, 'in-progress')"
 					@change="change"
+					@openModal="openModal"
 			/>
 		</div>
 
@@ -51,6 +74,7 @@ onMounted(() => {
 					status="testing"
 					@update:items="(val) => handleItemsUpdate(val, 'testing')"
 					@change="change"
+					@openModal="openModal"
 			/>
 		</div>
 
@@ -62,9 +86,21 @@ onMounted(() => {
 					status="finished"
 					@update:items="(val) => handleItemsUpdate(val, 'finished')"
 					@change="change"
+					@openModal="openModal"
 			/>
 		</div>
 	</div>
+	<n-modal
+			v-model:show="showModal"
+			preset="dialog"
+			title="Dialog"
+			positive-text="Submit"
+			negative-text="Cancel"
+			@positive-click="submitCallback"
+			@negative-click="cancelCallback"
+	>
+
+	</n-modal>
 </template>
 
 <style scoped>

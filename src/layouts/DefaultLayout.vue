@@ -24,5 +24,9 @@ const handleClick = () => {
 
 
 <style scoped>
-
+.layout {
+	max-width: 1839px;
+	margin: 0 auto;
+	padding: 0 15px;
+}
 </style>
