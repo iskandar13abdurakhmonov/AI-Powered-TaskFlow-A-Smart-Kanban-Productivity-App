@@ -124,6 +124,28 @@ export const useTaskStore = defineStore('tasks', () => {
         });
     };
 
+    const addTask = (task: Task, boardType: string) => {
+        const board = getBoardByType(boardType);
+        if (board) {
+            if (!task.id) {
+                const allTasks = getAllTasks();
+                task.id = allTasks.length > 0 ? Math.max(...allTasks.map(t => t.id)) + 1 : 1;
+            }
+
+            board.value.push(task);
+            console.log(`Task "${task.title}" added to ${boardType}`);
+
+            if (storageAvailable) {
+                saveAllToStorage();
+            }
+
+            return true;
+        } else {
+            console.error(`Invalid board type: ${boardType}`);
+            return false;
+        }
+    };
+
     const saveAllToStorage = () => {
         if (!storageAvailable) {
             console.warn('localStorage is not available');
@@ -226,6 +248,7 @@ export const useTaskStore = defineStore('tasks', () => {
         getAllTasks,
         getBoardByType,
         getStatusByBoardType,
+        addTask,
         saveAllToStorage,
         resetToDefault,
         clearStorage,
