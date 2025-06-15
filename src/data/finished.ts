@@ -1,6 +1,6 @@
 export const finishedData = [
     {
-        id: 1,
+        id: 342,
         title: 'Карта - после текстового поиска пропадает наименование feature (title под иконкой)',
         description: '',
         status: 'finished',

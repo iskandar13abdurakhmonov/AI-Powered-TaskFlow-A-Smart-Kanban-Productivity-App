@@ -64,7 +64,7 @@ async function handleValidateClick(event: MouseEvent) {
 
 function addTask() {
   const newTask: Task = {
-    id: Date.now(),
+    id: Math.floor(Math.random() * 1000),
     title: formValue.value.title,
     description: '',
     status: getStatusFromType(props.status),

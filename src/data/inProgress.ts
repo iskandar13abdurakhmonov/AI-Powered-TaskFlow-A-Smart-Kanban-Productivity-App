@@ -1,6 +1,6 @@
 export const inProgressData = [
     {
-        id: 1,
+        id: 345,
         title: 'Карта - после текстового поиска пропадает наименование feature (title под иконкой)',
         description: '',
         status: 'in-progress',
