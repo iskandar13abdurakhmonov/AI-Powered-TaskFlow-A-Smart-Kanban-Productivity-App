@@ -29,6 +29,22 @@ function handleAddTask(newTask: Task, boardType: string) {
   }
 }
 
+function handleUpdateTask(updatedTask: Task) {
+  const boards = ['todos', 'in-progress', 'testing', 'finished'];
+
+  for (const boardType of boards) {
+    const board = getBoardByType(boardType);
+    if (board) {
+      const taskIndex = board.value.findIndex(task => task.id === updatedTask.id);
+      if (taskIndex !== -1) {
+        board.value[taskIndex] = updatedTask;
+        console.log(`Task "${updatedTask.title}" updated in ${boardType}`);
+        break;
+      }
+    }
+  }
+}
+
 onMounted(() => {
   console.log('Todos:', todos.value)
   console.log('InProgress:', inProgress.value)
@@ -50,6 +66,7 @@ onMounted(() => {
           @update:items="(val) => handleItemsUpdate(val, 'todos')"
           @change="change"
           @add-task="handleAddTask"
+          @update-task="handleUpdateTask"
       />
     </div>
 
@@ -62,6 +79,7 @@ onMounted(() => {
           @update:items="(val) => handleItemsUpdate(val, 'in-progress')"
           @change="change"
           @add-task="handleAddTask"
+          @update-task="handleUpdateTask"
       />
     </div>
 
@@ -74,6 +92,7 @@ onMounted(() => {
           @update:items="(val) => handleItemsUpdate(val, 'testing')"
           @change="change"
           @add-task="handleAddTask"
+          @update-task="handleUpdateTask"
       />
     </div>
 
@@ -86,6 +105,7 @@ onMounted(() => {
           @update:items="(val) => handleItemsUpdate(val, 'finished')"
           @change="change"
           @add-task="handleAddTask"
+          @update-task="handleUpdateTask"
       />
     </div>
   </div>

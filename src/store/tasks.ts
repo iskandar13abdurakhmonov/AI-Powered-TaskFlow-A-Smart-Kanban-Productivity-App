@@ -102,26 +102,6 @@ export const useTaskStore = defineStore('tasks', () => {
                 saveAllToStorage();
             }
         }
-
-        if (evt.removed) {
-            const removedTask = evt.removed.element;
-            console.log(`Task "${removedTask.title}" removed from ${currentBoardType}`);
-        }
-
-        if (evt.moved) {
-            const movedTask = evt.moved.element;
-            const newIndex = evt.moved.newIndex;
-            const oldIndex = evt.moved.oldIndex;
-
-            console.log(`Task "${movedTask.title}" moved within ${currentBoardType} from index ${oldIndex} to ${newIndex}`);
-        }
-
-        console.log('Current state:', {
-            todos: todos.value.length,
-            inProgress: inProgress.value.length,
-            testing: testing.value.length,
-            finished: finished.value.length
-        });
     };
 
     const addTask = (task: Task, boardType: string) => {
@@ -133,7 +113,6 @@ export const useTaskStore = defineStore('tasks', () => {
             }
 
             board.value.push(task);
-            console.log(`Task "${task.title}" added to ${boardType}`);
 
             if (storageAvailable) {
                 saveAllToStorage();
@@ -169,8 +148,6 @@ export const useTaskStore = defineStore('tasks', () => {
         if (storageAvailable) {
             clearAllBoardStorage();
         }
-
-        console.log('Data reset to default');
     };
 
     const clearStorage = () => {
@@ -180,7 +157,6 @@ export const useTaskStore = defineStore('tasks', () => {
         }
 
         clearAllBoardStorage();
-        console.log('localStorage cleared');
     };
 
     const exportData = () => {
@@ -199,8 +175,6 @@ export const useTaskStore = defineStore('tasks', () => {
             if (data.inProgress) inProgress.value = data.inProgress;
             if (data.testing) testing.value = data.testing;
             if (data.finished) finished.value = data.finished;
-
-            console.log('Data imported successfully');
         } catch (error) {
             console.error('Error importing data:', error);
         }
@@ -224,8 +198,6 @@ export const useTaskStore = defineStore('tasks', () => {
         const task = sourceBoard.value.splice(taskIndex, 1)[0];
         task.status = getStatusByBoardType(toBoard);
         targetBoard.value.push(task);
-
-        console.log(`Task "${task.title}" moved from ${fromBoard} to ${toBoard}`);
     };
 
     const getAllTasks = () => {

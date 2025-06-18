@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { VueDraggableNext } from "vue-draggable-next";
-import {Bug, Attach, ChatboxOutline, CalendarOutline, AlertOutline, AddCircleOutline} from '@vicons/ionicons5'
+import {Bug, Attach, ChatboxOutline, CalendarOutline, AlertOutline, AddCircleOutline, ArchiveOutline as ArchiveIcon, ImageOutline, CloseOutline} from '@vicons/ionicons5'
 import {type FormInst, useMessage} from "naive-ui";
+import type { UploadFileInfo, UploadInst } from 'naive-ui'
 import {ref, nextTick} from "vue";
 import type { Task } from "../types/Task.ts";
 
@@ -24,13 +25,25 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['update:items', 'change', 'add-task']);
+const emit = defineEmits(['update:items', 'change', 'add-task', 'update-task']);
 const showForm = ref(false)
 const formRef = ref<FormInst | null>(null)
 const message = useMessage()
 const formValue = ref({
-  title: ''
+  title: '',
+  description: '',
+  priority: 'medium',
+  dueDate: new Date().toISOString().split('T')[0],
+  category: 'General'
 })
+const showDetails = ref(false)
+const selectedTask = ref<Task | null>(null)
+const fileListLength = ref(0)
+const upload = ref<UploadInst | null>(null)
+const taskImages = ref<string[]>([])
+const formImages = ref<string[]>([])
+
+
 const rules = {
   title: {
     required: true,
@@ -39,8 +52,23 @@ const rules = {
   }
 }
 
+const priorityOptions = [
+  { label: 'High', value: 'high' },
+  { label: 'Medium', value: 'medium' },
+  { label: 'Low', value: 'low' }
+]
+
+const categoryOptions = [
+  { label: 'General', value: 'General' },
+  { label: 'Bug Fix', value: 'Bug Fix' },
+  { label: 'Feature', value: 'Feature' },
+  { label: 'Design', value: 'Design' },
+  { label: 'Documentation', value: 'Documentation' }
+]
+
 async function handleValidateClick(event: MouseEvent) {
   event.preventDefault()
+  event.stopPropagation()
   if (!formRef.value) {
     await nextTick()
   }
@@ -64,16 +92,17 @@ async function handleValidateClick(event: MouseEvent) {
 
 function addTask() {
   const newTask: Task = {
-    id: Math.floor(Math.random() * 1000),
+    id: Math.floor(Math.random() * 100000),
     title: formValue.value.title,
-    description: '',
+    description: formValue.value.description,
     status: getStatusFromType(props.status),
-    dueDate: new Date().toISOString().split('T')[0],
-    priority: 'medium',
+    dueDate: formValue.value.dueDate,
+    priority: formValue.value.priority,
     progress: 0,
-    category: 'General',
+    category: formValue.value.category,
     createdAt: new Date().toISOString(),
-    assignedTo: []
+    assignedTo: [],
+    images: [...formImages.value]
   }
 
   emit('add-task', newTask, props.status)
@@ -122,13 +151,91 @@ async function addNewTask() {
 }
 
 function resetForm() {
-  formValue.value = { title: '' }
+  formValue.value = {
+    title: '',
+    description: '',
+    priority: 'medium',
+    dueDate: new Date().toISOString().split('T')[0],
+    category: 'General'
+  }
+  formImages.value = []
   showForm.value = false
 }
 
-function cancelForm() {
+function cancelForm(event?: Event) {
+  if (event) {
+    event.preventDefault()
+    event.stopPropagation()
+  }
   resetForm()
 }
+
+function openDetails(task: Task) {
+  console.log('Opening task details:', task)
+  selectedTask.value = task
+  taskImages.value = task.images || []
+  showDetails.value = true
+}
+
+function handleImageUpload(options: { file: UploadFileInfo, event?: Event }) {
+  const file = options.file.file
+  if (!file) return
+
+  // Check if it's an image
+  if (!file.type.startsWith('image/')) {
+    message.error('Please select an image file')
+    return
+  }
+
+  if (file.size > 5 * 1024 * 1024) {
+    message.error('Image size should be less than 5MB')
+    return
+  }
+
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    const imageUrl = e.target?.result as string
+    if (showForm.value) {
+      formImages.value.push(imageUrl)
+    } else if (selectedTask.value) {
+      taskImages.value.push(imageUrl)
+      const updatedTask = { ...selectedTask.value, images: [...taskImages.value] }
+      emit('update-task', updatedTask)
+    }
+    message.success('Image uploaded successfully')
+  }
+  reader.readAsDataURL(file)
+}
+
+function removeImage(index: number, isForm: boolean = false, event?: Event) {
+  if (event) {
+    event.preventDefault()
+    event.stopPropagation()
+  }
+
+  if (isForm) {
+    formImages.value.splice(index, 1)
+  } else {
+    taskImages.value.splice(index, 1)
+    if (selectedTask.value) {
+      const updatedTask = { ...selectedTask.value, images: [...taskImages.value] }
+      emit('update-task', updatedTask)
+    }
+  }
+  message.success('Image removed')
+}
+
+
+
+function getPriorityType(priority: string) {
+  switch (priority) {
+    case 'high': return 'error'
+    case 'medium': return 'warning'
+    case 'low': return 'success'
+    default: return 'info'
+  }
+}
+
 </script>
 
 <template>
@@ -166,7 +273,9 @@ function cancelForm() {
           bordered
           class="list-item-custom"
       >
-        <n-list-item>
+        <n-list-item
+            @click="openDetails(item)"
+        >
           <n-thing>
             <div>
               <div class="flex justify-between align-baseline">
@@ -189,7 +298,33 @@ function cancelForm() {
                   </template>
                 </n-tag>
               </div>
+
+              <!-- Image gallery for task -->
+              <div v-if="item.images && item.images.length > 0" style="margin-top: 20px" @click.stop>
+                <n-image-group>
+                  <div class="image-grid">
+                    <n-image
+                        v-for="(image, index) in item.images.slice(0, 3)"
+                        :key="index"
+                        :src="image"
+                        width="340"
+                        height="80"
+                        object-fit="cover"
+                        style="border-radius: 8px; margin-right: 8px; margin-bottom: 8px;"
+                        @click.stop
+                    />
+                    <div v-if="item.images.length > 3" class="more-images-indicator">
+                      <n-button size="small" quaternary @click.stop="openDetails(item)">
+                        +{{ item.images.length - 3 }} more
+                      </n-button>
+                    </div>
+                  </div>
+                </n-image-group>
+              </div>
+
               <n-h2>{{ item.title }}</n-h2>
+              <p v-if="item.description" class="text-gray-600 mb-4">{{ item.description }}</p>
+
               <div>
                 <n-progress
                     type="line"
@@ -206,7 +341,11 @@ function cancelForm() {
                     <n-icon :component="CalendarOutline" />
                   </template>
                 </n-tag>
-                <n-tag round :bordered="false" type="success">
+                <n-tag
+                    round
+                    :bordered="false"
+                    :type="getPriorityType(item.priority)"
+                >
                   {{ item.priority }}
                   <template #icon>
                     <n-icon :component="AlertOutline" />
@@ -231,6 +370,27 @@ function cancelForm() {
                 </n-avatar-group>
                 <div>
                   <n-badge
+                      v-if="item.images && item.images.length > 0"
+                      :value="item.images.length"
+                      :max="99"
+                      :offset="[-6, 6]"
+                  >
+                    <n-button
+                        quaternary
+                        circle
+                        size="large"
+                        @click.stop
+                    >
+                      <template #icon>
+                        <n-icon
+                            size="28"
+                            :component="ImageOutline"
+                            :depth="2"
+                        />
+                      </template>
+                    </n-button>
+                  </n-badge>
+                  <n-badge
                       :value="1"
                       :max="99"
                       :offset="[-6, 6]"
@@ -239,6 +399,7 @@ function cancelForm() {
                         quaternary
                         circle
                         size="large"
+                        @click.stop
                     >
                       <template #icon>
                         <n-icon
@@ -258,6 +419,7 @@ function cancelForm() {
                         quaternary
                         circle
                         size="large"
+                        @click.stop
                     >
                       <template #icon>
                         <n-icon
@@ -290,12 +452,94 @@ function cancelForm() {
               @keyup.enter="handleValidateClick"
           />
         </n-form-item>
+
+        <n-form-item label="Description">
+          <n-input
+              v-model:value="formValue.description"
+              type="textarea"
+              placeholder="Enter task description"
+              :rows="3"
+          />
+        </n-form-item>
+
+        <n-form-item label="Priority">
+          <n-select
+              v-model:value="formValue.priority"
+              :options="priorityOptions"
+              placeholder="Select priority"
+          />
+        </n-form-item>
+
+        <n-form-item label="Category">
+          <n-select
+              v-model:value="formValue.category"
+              :options="categoryOptions"
+              placeholder="Select category"
+          />
+        </n-form-item>
+
+        <n-form-item label="Due Date">
+          <n-date-picker
+              v-model:value="formValue.dueDate"
+              type="date"
+              format="yyyy-MM-dd"
+          />
+        </n-form-item>
+
+        <n-form-item label="Images">
+          <div class="w-full">
+            <n-upload
+                :custom-request="handleImageUpload"
+                accept="image/*"
+                :show-file-list="false"
+                multiple
+            >
+              <n-button dashed block>
+                <template #icon>
+                  <n-icon :component="ImageOutline" />
+                </template>
+                Click or drag images here
+              </n-button>
+            </n-upload>
+
+            <div v-if="formImages.length > 0" class="mt-4">
+              <n-space>
+                <div
+                    v-for="(image, index) in formImages"
+                    :key="index"
+                    class="relative inline-block"
+                >
+                  <n-image
+                      :src="image"
+                      width="100"
+                      height="80"
+                      object-fit="cover"
+                      style="border-radius: 8px;"
+                  />
+                  <n-button
+                      size="small"
+                      circle
+                      quaternary
+                      type="error"
+                      class="absolute -top-2 -right-2"
+                      @click="removeImage(index, true, $event)"
+                  >
+                    <template #icon>
+                      <n-icon :component="CloseOutline" />
+                    </template>
+                  </n-button>
+                </div>
+              </n-space>
+            </div>
+          </div>
+        </n-form-item>
+
         <n-form-item>
           <n-space>
             <n-button type="primary" @click="handleValidateClick">
               Add Task
             </n-button>
-            <n-button @click="cancelForm">
+            <n-button @click="cancelForm($event)">
               Cancel
             </n-button>
           </n-space>
@@ -303,6 +547,114 @@ function cancelForm() {
       </n-form>
     </n-card>
   </n-card>
+
+  <n-modal
+      v-model:show="showDetails"
+  >
+    <n-card
+        style="width: 800px; max-height: 80vh; overflow-y: auto;"
+        :title="`Task #${selectedTask?.id} - ${selectedTask?.title}`"
+        :bordered="false"
+        size="huge"
+        role="dialog"
+        aria-modal="true"
+        closable
+        @close="showDetails = false"
+    >
+      <div v-if="selectedTask">
+        <n-descriptions :column="2" bordered>
+          <n-descriptions-item label="Status">
+            <n-tag :type="selectedTask.status === 'finished' ? 'success' : 'info'">
+              {{ selectedTask.status }}
+            </n-tag>
+          </n-descriptions-item>
+          <n-descriptions-item label="Priority">
+            <n-tag :type="getPriorityType(selectedTask.priority)">
+              {{ selectedTask.priority }}
+            </n-tag>
+          </n-descriptions-item>
+          <n-descriptions-item label="Category">
+            {{ selectedTask.category }}
+          </n-descriptions-item>
+          <n-descriptions-item label="Due Date">
+            {{ selectedTask.dueDate }}
+          </n-descriptions-item>
+          <n-descriptions-item label="Progress">
+            <n-progress
+                type="line"
+                :percentage="selectedTask.progress"
+                :status="getProgressStatus(selectedTask.progress)"
+            />
+          </n-descriptions-item>
+          <n-descriptions-item label="Created">
+            {{ new Date(selectedTask.createdAt).toLocaleDateString() }}
+          </n-descriptions-item>
+        </n-descriptions>
+
+        <n-divider />
+
+        <div v-if="selectedTask.description">
+          <h3>Description</h3>
+          <p>{{ selectedTask.description }}</p>
+          <n-divider />
+        </div>
+
+        <div>
+          <n-flex justify="space-between" align="center">
+            <h3>Images ({{ taskImages.length }})</h3>
+            <n-upload
+                :custom-request="handleImageUpload"
+                accept="image/*"
+                :show-file-list="false"
+            >
+              <n-button size="small" type="primary">
+                <template #icon>
+                  <n-icon :component="ImageOutline" />
+                </template>
+                Add Image
+              </n-button>
+            </n-upload>
+          </n-flex>
+
+          <div v-if="taskImages.length > 0" style="margin-top: 16px;">
+            <n-image-group>
+              <n-grid :cols="4" :x-gap="12" :y-gap="12">
+                <n-grid-item
+                    v-for="(image, index) in taskImages"
+                    :key="index"
+                >
+                  <div class="relative">
+                    <n-image
+                        :src="image"
+                        width="150"
+                        height="120"
+                        object-fit="cover"
+                        style="border-radius: 8px;"
+                    />
+                    <n-button
+                        size="small"
+                        circle
+                        quaternary
+                        type="error"
+                        class="absolute top-2 right-2"
+                        @click="removeImage(index, false, $event)"
+                    >
+                      <template #icon>
+                        <n-icon :component="CloseOutline" />
+                      </template>
+                    </n-button>
+                  </div>
+                </n-grid-item>
+              </n-grid>
+            </n-image-group>
+          </div>
+          <n-empty v-else description="No images uploaded" style="margin-top: 20px;" />
+        </div>
+      </div>
+    </n-card>
+  </n-modal>
+
+
 </template>
 
 <style scoped>
@@ -326,5 +678,46 @@ function cancelForm() {
 
 .list-item-custom :deep(.n-list-item) {
   border-radius: 10px !important;
+}
+
+.image-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.more-images-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 110px;
+  height: 80px;
+  border: 2px dashed #d9d9d9;
+  border-radius: 8px;
+  background-color: #fafafa;
+}
+
+.relative {
+  position: relative;
+}
+
+.absolute {
+  position: absolute;
+}
+
+.top-2 {
+  top: 8px;
+}
+
+.right-2 {
+  right: 8px;
+}
+
+.-top-2 {
+  top: -8px;
+}
+
+.-right-2 {
+  right: -8px;
 }
 </style>
