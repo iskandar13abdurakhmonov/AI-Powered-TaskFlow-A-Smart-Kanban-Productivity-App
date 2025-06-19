@@ -6,7 +6,6 @@ export const todosData = [
         status: 'to-do',
         dueDate: '2025-01-01',
         priority: 'low',
-        image: 'https://www.figma.com/community/resource/941f0a6f-d691-47a4-85f8-37c0301fc31b/thumbnail',
         progress: 0,
         category: 'feature',
         createdAt: '2024-12-31',
