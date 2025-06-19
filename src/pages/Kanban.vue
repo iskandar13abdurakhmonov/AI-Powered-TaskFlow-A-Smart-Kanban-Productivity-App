@@ -31,7 +31,7 @@ const containerClasses = computed(() => {
 	}
 })
 
-function handleItemsUpdate(newItems: any, status: string) {
+function handleItemsUpdate() {
 }
 
 function handleAddTask(newTask: Task, boardType: string) {

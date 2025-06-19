@@ -39,8 +39,6 @@ const formValue = ref({
 })
 const showDetails = ref(false)
 const selectedTask = ref<Task | null>(null)
-const fileListLength = ref(0)
-const upload = ref<UploadInst | null>(null)
 const taskImages = ref<string[]>([])
 const formImages = ref<string[]>([])
 
@@ -118,7 +116,6 @@ const speech = useSpeechRecognition({
 const color = shallowRef('transparent')
 
 if (speech.isSupported.value) {
-	// @ts-expect-error missing types
 	const SpeechGrammarList = window.SpeechGrammarList || window.webkitSpeechGrammarList
 	const speechRecognitionList = new SpeechGrammarList()
 	speechRecognitionList.addFromString(grammar, 1)
@@ -253,7 +250,6 @@ function handleImageUpload(options: { file: UploadFileInfo, event?: Event }) {
   const file = options.file.file
   if (!file) return
 
-  // Check if it's an image
   if (!file.type.startsWith('image/')) {
     message.error('Please select an image file')
     return

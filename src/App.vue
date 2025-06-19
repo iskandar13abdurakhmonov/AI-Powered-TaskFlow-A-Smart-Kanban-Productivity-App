@@ -1,5 +1,4 @@
 <script setup>
-import {darkTheme} from 'naive-ui'
 import {ref} from 'vue'
 
 const theme = ref(null)
