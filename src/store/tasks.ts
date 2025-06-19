@@ -14,21 +14,30 @@ import {
     isLocalStorageAvailable
 } from "../utils/localStorage.ts";
 
+// Utility to map raw data to Task type, ensuring correct status and priority types
+function mapToTaskArray(raw: any[], statusOverride?: Task["status"]): Task[] {
+    return raw.map((item) => ({
+        ...item,
+        status: statusOverride ?? (item.status as Task["status"]),
+        priority: item.priority as Task["priority"],
+    }));
+}
+
 export const useTaskStore = defineStore('tasks', () => {
     const storageAvailable = isLocalStorageAvailable();
 
     const initialData = storageAvailable
         ? loadAllBoardsFromStorage({
-            todos: [...todosData],
-            inProgress: [...inProgressData],
-            testing: [...testingData],
-            finished: [...finishedData]
+            todos: mapToTaskArray(todosData, 'to-do'),
+            inProgress: mapToTaskArray(inProgressData, 'in-progress'),
+            testing: mapToTaskArray(testingData, 'testing'),
+            finished: mapToTaskArray(finishedData, 'finished')
         })
         : {
-            todos: [...todosData],
-            inProgress: [...inProgressData],
-            testing: [...testingData],
-            finished: [...finishedData]
+            todos: mapToTaskArray(todosData, 'to-do'),
+            inProgress: mapToTaskArray(inProgressData, 'in-progress'),
+            testing: mapToTaskArray(testingData, 'testing'),
+            finished: mapToTaskArray(finishedData, 'finished')
         };
 
     const todos = ref<Task[]>(initialData.todos);
@@ -71,7 +80,7 @@ export const useTaskStore = defineStore('tasks', () => {
         }
     };
 
-    const getStatusByBoardType = (type: string): string => {
+    const getStatusByBoardType = (type: string): Task["status"] => {
         switch (type) {
             case 'todos':
                 return 'to-do';
@@ -110,7 +119,9 @@ export const useTaskStore = defineStore('tasks', () => {
                 const allTasks = getAllTasks();
                 task.id = allTasks.length > 0 ? Math.max(...allTasks.map(t => t.id)) + 1 : 1;
             }
-
+            // Ensure status and priority are correct types
+            task.status = getStatusByBoardType(boardType);
+            task.priority = task.priority as Task["priority"];
             board.value.push(task);
 
             if (storageAvailable) {
@@ -139,10 +150,10 @@ export const useTaskStore = defineStore('tasks', () => {
     };
 
     const resetToDefault = () => {
-        todos.value = [...todosData];
-        inProgress.value = [...inProgressData];
-        testing.value = [...testingData];
-        finished.value = [...finishedData];
+        todos.value = mapToTaskArray(todosData, 'to-do');
+        inProgress.value = mapToTaskArray(inProgressData, 'in-progress');
+        testing.value = mapToTaskArray(testingData, 'testing');
+        finished.value = mapToTaskArray(finishedData, 'finished');
 
         if (storageAvailable) {
             clearAllBoardStorage();

@@ -61,10 +61,10 @@ function handleUpdateTask(updatedTask: Task) {
 }
 
 onMounted(() => {
-	console.log('Todos:', todos.value)
-	console.log('InProgress:', inProgress.value)
-	console.log('Testing:', testing.value)
-	console.log('Finished:', finished.value)
+	console.log('Todos:', todos)
+	console.log('InProgress:', inProgress)
+	console.log('Testing:', testing)
+	console.log('Finished:', finished)
 
 	checkScreenSize()
 
@@ -83,7 +83,7 @@ onMounted(() => {
 					:items="todos"
 					:data-id="1"
 					status="todos"
-					@update:items="(val) => handleItemsUpdate(val, 'todos')"
+					@update:items="() => handleItemsUpdate()"
 					@change="change"
 					@add-task="handleAddTask"
 					@update-task="handleUpdateTask"
@@ -96,7 +96,7 @@ onMounted(() => {
 					:items="inProgress"
 					:data-id="2"
 					status="in-progress"
-					@update:items="(val) => handleItemsUpdate(val, 'in-progress')"
+					@update:items="() => handleItemsUpdate()"
 					@change="change"
 					@add-task="handleAddTask"
 					@update-task="handleUpdateTask"
@@ -109,7 +109,7 @@ onMounted(() => {
 					:items="testing"
 					:data-id="3"
 					status="testing"
-					@update:items="(val) => handleItemsUpdate(val, 'testing')"
+					@update:items="() => handleItemsUpdate()"
 					@change="change"
 					@add-task="handleAddTask"
 					@update-task="handleUpdateTask"
@@ -122,7 +122,7 @@ onMounted(() => {
 					:items="finished"
 					:data-id="4"
 					status="finished"
-					@update:items="(val) => handleItemsUpdate(val, 'finished')"
+					@update:items="() => handleItemsUpdate()"
 					@change="change"
 					@add-task="handleAddTask"
 					@update-task="handleUpdateTask"

@@ -2,7 +2,7 @@
 import { VueDraggableNext } from "vue-draggable-next";
 import {Bug, Attach, ChatboxOutline, CalendarOutline, AlertOutline, AddCircleOutline, ImageOutline, CloseOutline} from '@vicons/ionicons5'
 import {type FormInst, useMessage} from "naive-ui";
-import type { UploadFileInfo, UploadInst } from 'naive-ui'
+import type { UploadFileInfo } from 'naive-ui'
 import {ref, nextTick, shallowRef, watch } from "vue";
 import type { Task } from "../types/Task.ts";
 import { useSpeechRecognition} from "@vueuse/core";
