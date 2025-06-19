@@ -13,7 +13,7 @@ const props = defineProps({
     required: true
   },
   items: {
-    type: Array,
+    type: Array as () => Task[],
     required: true
   },
   dataId: {
@@ -116,6 +116,7 @@ const speech = useSpeechRecognition({
 const color = shallowRef('transparent')
 
 if (speech.isSupported.value) {
+	// @ts-ignore
 	const SpeechGrammarList = window.SpeechGrammarList || window.webkitSpeechGrammarList
 	const speechRecognitionList = new SpeechGrammarList()
 	speechRecognitionList.addFromString(grammar, 1)
@@ -157,7 +158,7 @@ function addTask() {
 		description: formValue.value.description,
 		status: getStatusFromType(props.status),
 		dueDate: dueDate,
-		priority: formValue.value.priority,
+		priority: formValue.value.priority as 'high' | 'medium' | 'low',
 		progress: 0,
 		category: formValue.value.category,
 		createdAt: new Date().toISOString(),
@@ -309,7 +310,7 @@ function getPriorityType(priority: string) {
 <template>
   <n-card class="col-3 card-custom">
     <NFlex justify="space-between">
-      <n-h2 class="font-black" :strong="true">{{ title }} ({{ items.length }})</n-h2>
+      <n-h2 class="font-black" :strong="true">{{ title }} ({{ (items as Task[]).length }})</n-h2>
       <NButton
           strong
           secondary
@@ -334,7 +335,7 @@ function getPriorityType(priority: string) {
         style="min-height: 560px"
     >
       <n-list
-          v-for="item in items"
+          v-for="item in (items as Task[])"
           :key="item.id"
           hoverable
           clickable
@@ -342,7 +343,7 @@ function getPriorityType(priority: string) {
           class="list-item-custom"
       >
         <n-list-item
-            @click="openDetails(item)"
+            @click="openDetails(item as Task)"
         >
           <n-thing>
             <div>
@@ -382,7 +383,7 @@ function getPriorityType(priority: string) {
                         @click.stop
                     />
                     <div v-if="item.images.length > 3" class="more-images-indicator">
-                      <n-button size="small" quaternary @click.stop="openDetails(item)">
+                      <n-button size="small" quaternary @click.stop="openDetails(item as Task)">
                         +{{ item.images.length - 3 }} more
                       </n-button>
                     </div>
