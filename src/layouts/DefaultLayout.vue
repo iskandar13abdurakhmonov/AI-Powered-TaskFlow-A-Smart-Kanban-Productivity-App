@@ -1,12 +1,6 @@
 <script setup lang="ts">
 import AppHeader from "../components/AppHeader.vue";
-import {useRouter} from "vue-router";
 
-const router = useRouter()
-
-const handleClick = () => {
-	router.push({ name: 'Home' })
-}
 </script>
 
 <template>

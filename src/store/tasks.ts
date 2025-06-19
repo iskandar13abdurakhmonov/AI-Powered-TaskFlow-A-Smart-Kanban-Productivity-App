@@ -8,7 +8,6 @@ import { finishedData } from "../data/finished.ts";
 import {
     STORAGE_KEYS,
     saveTasksToStorage,
-    loadTasksFromStorage,
     saveAllBoardsToStorage,
     loadAllBoardsFromStorage,
     clearAllBoardStorage,

@@ -2,7 +2,6 @@
 import { useTaskStore } from "../store/tasks.ts";
 import DraggableColumn from "../components/DraggableColumn.vue";
 import {onMounted, ref, computed} from "vue";
-import {useMessage} from "naive-ui";
 import type { Task } from "../types/Task.ts";
 
 const {
@@ -13,8 +12,6 @@ const {
 	change,
 	getBoardByType,
 } = useTaskStore();
-
-const message = useMessage()
 
 const isMobile = ref(false)
 const isTablet = ref(false)

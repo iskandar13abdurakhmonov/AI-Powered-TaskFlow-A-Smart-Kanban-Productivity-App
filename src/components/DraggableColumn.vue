@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { VueDraggableNext } from "vue-draggable-next";
-import {Bug, Attach, ChatboxOutline, CalendarOutline, AlertOutline, AddCircleOutline, ArchiveOutline as ArchiveIcon, ImageOutline, CloseOutline} from '@vicons/ionicons5'
+import {Bug, Attach, ChatboxOutline, CalendarOutline, AlertOutline, AddCircleOutline, ImageOutline, CloseOutline} from '@vicons/ionicons5'
 import {type FormInst, useMessage} from "naive-ui";
 import type { UploadFileInfo, UploadInst } from 'naive-ui'
 import {ref, nextTick, shallowRef, watch } from "vue";
