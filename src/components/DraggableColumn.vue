@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { VueDraggableNext } from "vue-draggable-next";
-import {Bug, Attach, ChatboxOutline, CalendarOutline, AlertOutline, AddCircleOutline, ImageOutline, CloseOutline} from '@vicons/ionicons5'
+import {Bug, Attach, ChatboxOutline, CalendarOutline, AlertOutline, AddCircleOutline, ImageOutline, CloseOutline, MicOutline, StopOutline} from '@vicons/ionicons5'
 import {type FormInst, useMessage} from "naive-ui";
 import type { UploadFileInfo } from 'naive-ui'
-import {ref, nextTick, shallowRef, watch } from "vue";
+import {ref, nextTick, shallowRef, watch, onUnmounted } from "vue";
 import type { Task } from "../types/Task.ts";
 import { useSpeechRecognition} from "@vueuse/core";
 
@@ -42,6 +42,11 @@ const selectedTask = ref<Task | null>(null)
 const taskImages = ref<string[]>([])
 const formImages = ref<string[]>([])
 
+// Voice recording state
+const isRecordingTitle = ref(false)
+const finalTranscript = ref('')
+const interimTranscript = ref('')
+let recordingTimeout: number | null = null
 
 const rules = {
   title: {
@@ -64,6 +69,36 @@ const categoryOptions = [
   { label: 'Design', value: 'Design' },
   { label: 'Documentation', value: 'Documentation' }
 ]
+
+const languageOptions = [
+  { label: 'English (US)', value: 'en-US' },
+  { label: 'English (UK)', value: 'en-GB' },
+  { label: 'Russian', value: 'ru-RU' },
+  { label: 'Spanish', value: 'es-ES' },
+  { label: 'French', value: 'fr-FR' },
+  { label: 'German', value: 'de-DE' }
+]
+
+const lang = shallowRef('en-US')
+
+// Speech recognition setup for task title
+const titleSpeech = useSpeechRecognition({
+  lang,
+  continuous: true, // Changed to true for longer speeches
+  interimResults: true,
+})
+
+// Update the watch for speech results
+watch(titleSpeech.result, (newResult) => {
+  if (isRecordingTitle.value) {
+    if (titleSpeech.isFinal.value) {
+      finalTranscript.value = newResult
+      formValue.value.title = newResult.trim()
+    } else {
+      interimTranscript.value = newResult
+    }
+  }
+})
 
 async function handleValidateClick(event: MouseEvent) {
   event.preventDefault()
@@ -89,56 +124,98 @@ async function handleValidateClick(event: MouseEvent) {
   })
 }
 
-const lang = shallowRef('en-US')
+function startTitleRecording() {
+  if (!titleSpeech.isSupported.value) {
+    message.error('Speech recognition is not supported in your browser')
+    return
+  }
+
+  isRecordingTitle.value = true
+  finalTranscript.value = ''
+  interimTranscript.value = ''
+  titleSpeech.result.value = ''
+  titleSpeech.start()
+  message.info('Recording started... Speak your task title')
+
+  // Auto-stop after 30 seconds of inactivity
+  recordingTimeout = setTimeout(() => {
+    if (isRecordingTitle.value) {
+      stopTitleRecording()
+      message.warning('Recording stopped automatically after 30 seconds')
+    }
+  }, 30000) as unknown as number
+}
+
+function stopTitleRecording() {
+  if (recordingTimeout) {
+    clearTimeout(recordingTimeout)
+    recordingTimeout = null
+  }
+
+  if (titleSpeech.isListening.value) {
+    titleSpeech.stop()
+  }
+  isRecordingTitle.value = false
+
+  // Use the final transcript if available, otherwise use whatever we have
+  const finalText = finalTranscript.value || titleSpeech.result.value
+  if (finalText) {
+    formValue.value.title = finalText.trim()
+    message.success('Voice recording completed and added to title')
+  } else {
+    message.warning('No speech detected')
+  }
+}
 
 function sample<T>(arr: T[], size: number) {
-	const shuffled = arr.slice(0)
-	let i = arr.length
-	let temp: T
-	let index: number
-	while (i--) {
-		index = Math.floor((i + 1) * Math.random())
-		temp = shuffled[index]
-		shuffled[index] = shuffled[i]
-		shuffled[i] = temp
-	}
-	return shuffled.slice(0, size)
+  const shuffled = arr.slice(0)
+  console.log('shuffled: ', arr)
+  let i = arr.length
+  let temp: T
+  let index: number
+  while (i--) {
+    index = Math.floor((i + 1) * Math.random())
+    temp = shuffled[index]
+    shuffled[index] = shuffled[i]
+    shuffled[i] = temp
+  }
+  return shuffled.slice(0, size)
 }
 
 const colors = ['aqua', 'azure', 'beige', 'bisque', 'black', 'blue', 'brown', 'chocolate', 'coral', 'crimson', 'cyan', 'fuchsia', 'ghostwhite', 'gold', 'goldenrod', 'gray', 'green', 'indigo', 'ivory', 'khaki', 'lavender', 'lime', 'linen', 'magenta', 'maroon', 'moccasin', 'navy', 'olive', 'orange', 'orchid', 'peru', 'pink', 'plum', 'purple', 'red', 'salmon', 'sienna', 'silver', 'snow', 'tan', 'teal', 'thistle', 'tomato', 'turquoise', 'violet', 'white', 'yellow', 'transparent']
 const grammar = `#JSGF V1.0; grammar colors; public <color> = ${colors.join(' | ')} ;`
 
 const speech = useSpeechRecognition({
-	lang,
-	continuous: true,
+  lang,
+  continuous: true,
 })
 
 const color = shallowRef('transparent')
 
 if (speech.isSupported.value) {
-	// @ts-ignore
-	const SpeechGrammarList = window.SpeechGrammarList || window.webkitSpeechGrammarList
-	const speechRecognitionList = new SpeechGrammarList()
-	speechRecognitionList.addFromString(grammar, 1)
-	speech.recognition!.grammars = speechRecognitionList
+  // @ts-ignore
+  const SpeechGrammarList = window.SpeechGrammarList || window.webkitSpeechGrammarList
+  const speechRecognitionList = new SpeechGrammarList()
+  speechRecognitionList.addFromString(grammar, 1)
+  speech.recognition!.grammars = speechRecognitionList
 
-	watch(speech.result, () => {
-		for (const i of speech.result.value.toLowerCase().split(' ').reverse()) {
-			if (colors.includes(i)) {
-				color.value = i
-				break
-			}
-		}
-	})
+  watch(speech.result, () => {
+    for (const i of speech.result.value.toLowerCase().split(' ').reverse()) {
+      if (colors.includes(i)) {
+        color.value = i
+        break
+      }
+    }
+  })
 }
 
 const sampled = shallowRef<string[]>([])
 
 function start() {
-	color.value = 'transparent'
-	speech.result.value = ''
-	sampled.value = sample(colors, 5)
-	speech.start()
+  color.value = 'transparent'
+  speech.result.value = ''
+  sampled.value = sample(colors, 5)
+  speech.start()
 }
 
 const { isListening, isSupported, stop, result } = speech
@@ -148,35 +225,35 @@ watch(lang, lang => isListening.value ? null : selectedLanguage.value = lang)
 watch(isListening, isListening => isListening ? null : selectedLanguage.value = lang.value)
 
 function addTask() {
-	const dueDate = typeof formValue.value.dueDate === 'string'
-			? formValue.value.dueDate
-			: new Date(formValue.value.dueDate).toISOString().split('T')[0];
+  const dueDate = typeof formValue.value.dueDate === 'string'
+      ? formValue.value.dueDate
+      : new Date(formValue.value.dueDate).toISOString().split('T')[0];
 
-	const newTask: Task = {
-		id: Math.floor(Math.random() * 100000),
-		title: formValue.value.title,
-		description: formValue.value.description,
-		status: getStatusFromType(props.status),
-		dueDate: dueDate,
-		priority: formValue.value.priority as 'high' | 'medium' | 'low',
-		progress: 0,
-		category: formValue.value.category,
-		createdAt: new Date().toISOString(),
-		assignedTo: [],
-		images: [...formImages.value]
-	}
+  const newTask: Task = {
+    id: Math.floor(Math.random() * 999),
+    title: formValue.value.title,
+    description: formValue.value.description,
+    status: getStatusFromType(props.status),
+    dueDate: dueDate,
+    priority: formValue.value.priority as 'high' | 'medium' | 'low',
+    progress: 0,
+    category: formValue.value.category,
+    createdAt: new Date().toISOString(),
+    assignedTo: [],
+    images: [...formImages.value]
+  }
 
-	console.log('new task: ', newTask)
+  console.log('new task: ', newTask)
 
-	emit('add-task', newTask, props.status)
-	resetForm()
+  emit('add-task', newTask, props.status)
+  resetForm()
 }
 
 function handleDateChange(value: string | null) {
-	if (value) {
-		formValue.value.dueDate = value
-		console.log(formValue.value)
-	}
+  if (value) {
+    formValue.value.dueDate = value
+    console.log(formValue.value)
+  }
 }
 
 function getStatusFromType(statusType: string): 'to-do' | 'in-progress' | 'testing' | 'finished' {
@@ -221,15 +298,26 @@ async function addNewTask() {
 }
 
 function resetForm() {
-	formValue.value = {
-		title: '',
-		description: '',
-		priority: 'medium',
-		dueDate: new Date().toISOString().split('T')[0],
-		category: 'General'
-	}
-	formImages.value = []
-	showForm.value = false
+  formValue.value = {
+    title: '',
+    description: '',
+    priority: 'medium',
+    dueDate: new Date().toISOString().split('T')[0],
+    category: 'General'
+  }
+  formImages.value = []
+  showForm.value = false
+  // Reset voice recording state
+  isRecordingTitle.value = false
+  finalTranscript.value = ''
+  interimTranscript.value = ''
+  if (titleSpeech.isListening.value) {
+    titleSpeech.stop()
+  }
+  if (recordingTimeout) {
+    clearTimeout(recordingTimeout)
+    recordingTimeout = null
+  }
 }
 
 function cancelForm(event?: Event) {
@@ -294,8 +382,6 @@ function removeImage(index: number, isForm: boolean = false, event?: Event) {
   message.success('Image removed')
 }
 
-
-
 function getPriorityType(priority: string) {
   switch (priority) {
     case 'high': return 'error'
@@ -305,6 +391,15 @@ function getPriorityType(priority: string) {
   }
 }
 
+// Clean up on unmount
+onUnmounted(() => {
+  if (recordingTimeout) {
+    clearTimeout(recordingTimeout)
+  }
+  if (titleSpeech.isListening.value) {
+    titleSpeech.stop()
+  }
+})
 </script>
 
 <template>
@@ -514,70 +609,59 @@ function getPriorityType(priority: string) {
           :model="formValue"
           :rules="rules"
       >
-
-	      <div>
-		      <div v-if="!isSupported">
-			      Your browser does not support SpeechRecognition API,
-			      <a
-					      href="https://caniuse.com/mdn-api_speechrecognition"
-					      target="_blank"
-			      >more details</a>
-		      </div>
-		      <div v-else>
-			      <div space-x-4>
-				      <label class="radio">
-					      <input v-model="lang" value="en-US" type="radio">
-					      <span>English (US)</span>
-				      </label>
-				      <label class="radio">
-					      <input v-model="lang" value="fr" type="radio">
-					      <span>French</span>
-				      </label>
-				      <label class="radio">
-					      <input v-model="lang" value="es" type="radio">
-					      <span>Spanish</span>
-				      </label>
-			      </div>
-			      <n-button v-if="!isListening" @click="start">
-				      Press and talk
-			      </n-button>
-			      <n-button v-if="isListening" class="orange" @click="stop">
-				      Stop
-			      </n-button>
-			      <div v-if="isListening" class="mt-4">
-				      <template v-if="selectedLanguage === 'en-US'">
-					      <note class="mb-2">
-						      <b>Please say a color</b>
-					      </note>
-					      <note class="mb-2">
-						      try: {{ sampled.join(', ') }}
-					      </note>
-				      </template>
-
-				      <p v-else-if="selectedLanguage === 'es'">
-					      Speak some Spanish!
-				      </p>
-
-				      <p v-else-if="selectedLanguage === 'fr'">
-					      Speak some French!
-				      </p>
-
-				      <p
-						      class="tag"
-						      :style="selectedLanguage === 'en-US' ? { background: color } : {}"
-				      >
-					      {{ result }}
-				      </p>
-			      </div>
-		      </div>
-	      </div>
+        <n-form-item label="Language" v-if="isRecordingTitle">
+          <n-select
+              v-model:value="lang"
+              :options="languageOptions"
+              :disabled="isRecordingTitle"
+          />
+        </n-form-item>
 
         <n-form-item label="Title" path="title">
           <n-input
               v-model:value="formValue.title"
-              placeholder="Enter task title"
+              placeholder="Enter task title or record your voice"
               @keyup.enter="handleValidateClick"
-          />
+          >
+            <template #suffix>
+              <n-space size="small">
+                <n-button
+                    v-if="!isRecordingTitle"
+                    @click="startTitleRecording"
+                    type="primary"
+                    size="small"
+                    :disabled="!titleSpeech.isSupported.value"
+                >
+                  <template #icon>
+                    <n-icon :component="MicOutline" />
+                  </template>
+                  Start
+                </n-button>
+                <n-button
+                    v-if="isRecordingTitle"
+                    @click="stopTitleRecording"
+                    type="error"
+                    size="small"
+                >
+                  <template #icon>
+                    <n-icon :component="StopOutline" />
+                  </template>
+                  Stop
+                </n-button>
+              </n-space>
+            </template>
+          </n-input>
+          <div v-if="isRecordingTitle" class="recording-indicator">
+            <n-alert type="info" style="margin-top: 8px;">
+              <template #icon>
+                <n-icon :component="MicOutline" class="recording-pulse" />
+              </template>
+              Recording... Speak your task title clearly
+              <div v-if="interimTranscript" style="margin-top: 4px; font-size: 0.9em;">
+                <i>{{ interimTranscript }}</i>
+              </div>
+            </n-alert>
+          </div>
         </n-form-item>
 
         <n-form-item label="Description">
@@ -782,8 +866,6 @@ function getPriorityType(priority: string) {
       </div>
     </n-card>
   </n-modal>
-
-
 </template>
 
 <style scoped>
@@ -848,5 +930,25 @@ function getPriorityType(priority: string) {
 
 .-right-2 {
   right: -8px;
+}
+
+.recording-indicator {
+  margin-top: 8px;
+}
+
+.recording-pulse {
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 </style>
